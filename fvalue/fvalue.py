@@ -1,9 +1,10 @@
 from decimal import Decimal, ROUND_HALF_EVEN, ROUND_05UP, ROUND_CEILING, \
     ROUND_DOWN, ROUND_FLOOR, ROUND_HALF_DOWN, ROUND_HALF_UP, ROUND_UP
-from enum import Enum
+from enum import Enum, unique
 from typing import Tuple, Union
 
 
+@unique
 class RoundingOption(Enum):
     ROUND_HALF_EVEN = ROUND_HALF_EVEN
     ROUND_05UP = ROUND_05UP
@@ -17,11 +18,11 @@ class RoundingOption(Enum):
 
 class FormattedValue:
     def __init__(
-        self,
-        value: Union[int, float, Decimal],
-        error: Union[int, float, Decimal] = 0,
-        error_significant_figures: int = 1,
-        rounding: RoundingOption = RoundingOption.ROUND_HALF_EVEN,
+            self,
+            value: Union[int, float, Decimal],
+            error: Union[int, float, Decimal] = 0,
+            error_significant_figures: int = 1,
+            rounding: RoundingOption = RoundingOption.ROUND_HALF_EVEN,
     ):
         self.value = value
         self.error = error
@@ -60,7 +61,7 @@ class FormattedValue:
 
     @rounding.setter
     def rounding(self, rounding: RoundingOption) -> None:
-        if rounding not in RoundingOption:
+        if RoundingOption(rounding) not in RoundingOption:
             raise ValueError(f"Unsupported rounding option {rounding}.")
         self.__rounding = rounding
 
@@ -99,7 +100,7 @@ class FormattedValue:
         error = self._rounded_error(multiplier)
         value = self._rounded_value(error, multiplier)
         return value, error
-        
+
     def formatted(
             self,
             template: str = r"\SI{{{0} \pm {1}}}{{{2}}}",

@@ -27,18 +27,20 @@ def test_error_setter(
     if exception:
         with pytest.raises(exception):
             FormattedValue(valid_value, error)
+    else:
+        FormattedValue(valid_value, error)
 
 
 test_error_significant_figures_setter_data: \
     List[Tuple[Union[None, int, float, Decimal],
                Union[None, TypeError, ValueError]]] = [
-    (None, None),
-    (1, None),
-    (2, None),
-    (10, None),
-    (-1, ValueError),
-    (1.0, TypeError),
-    (Decimal(1), TypeError),
+        (None, TypeError),
+        (1, None),
+        (2, None),
+        (10, None),
+        (-1, ValueError),
+        (1.0, TypeError),
+        (Decimal(1), TypeError),
 ]
 
 
@@ -57,12 +59,19 @@ def test_error_significant_error_figures_setter(
                 valid_error,
                 error_significant_figures=error_significant_figures,
             )
+    else:
+        FormattedValue(
+            valid_value,
+            valid_error,
+            error_significant_figures=error_significant_figures,
+        )
 
 
 test_rounding_setter_data: List[Tuple[Union[str, RoundingOption],
-                                      Union[None, ValueError]]] = [
-    ("Invalid Rounding", ValueError)
-] + [(rounding, None) for rounding in RoundingOption]
+                                      Union[None, ValueError]]] = \
+    [("Invalid Rounding", ValueError)] \
+    + [(rounding, None) for rounding in RoundingOption] \
+    + [(rounding.value, None) for rounding in RoundingOption]
 
 
 @pytest.mark.parametrize("rounding, exception", test_rounding_setter_data)
@@ -79,6 +88,12 @@ def test_rounding_setter(
                 valid_error,
                 rounding=rounding,
             )
+    else:
+        FormattedValue(
+            valid_value,
+            valid_error,
+            rounding=rounding,
+        )
 
 
 test_actual_data_data: List[Tuple[Union[int, float, Decimal],
@@ -163,4 +178,3 @@ def test_formatted(
 
 def test_str():
     assert "10.0 ± 0.1" == str(FormattedValue(10, 0.1))
-
