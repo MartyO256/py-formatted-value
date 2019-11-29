@@ -1,4 +1,4 @@
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Callable
 
 import pytest
 
@@ -41,11 +41,13 @@ test_error_significant_figures_setter_data: \
         (-1, ValueError),
         (1.0, TypeError),
         (Decimal(1), TypeError),
-]
+    ]
 
 
-@pytest.mark.parametrize("error_significant_figures, exception",
-                         test_error_significant_figures_setter_data)
+@pytest.mark.parametrize(
+    "error_significant_figures, exception",
+    test_error_significant_figures_setter_data
+)
 def test_error_significant_error_figures_setter(
         error_significant_figures: Union[None, int, float, Decimal],
         exception: Union[None, ValueError, TypeError]
@@ -115,9 +117,11 @@ def test_actual_data(
         value: Union[int, float, Decimal],
         error: Union[int, float, Decimal],
 ):
-    for expected, actual in zip((value, error),
-                                FormattedValue(value, error).actual_data()):
-        assert expected == actual
+    for actual, expected in zip(
+            FormattedValue(value, error).actual_data(),
+            (value, error)
+    ):
+        assert actual == expected
 
 
 test_rounded_data_data: List[Tuple[FormattedValue,
@@ -128,7 +132,6 @@ test_rounded_data_data: List[Tuple[FormattedValue,
     (FormattedValue(10.0, 0.1, 2), None, (Decimal("10.00"), Decimal("0.10"))),
     (FormattedValue(10.0, 0.1, 3), None, (Decimal("10.000"), Decimal("0.100"))),
     (FormattedValue(0.001, 0.0001, 1), 1000, (Decimal("1.0"), Decimal("0.1"))),
-    (FormattedValue(100, 10, 1), None, (Decimal("100"), Decimal("10"))),
 ]
 
 
@@ -138,8 +141,8 @@ def test_rounded_data(
         multiplier: Union[None, int, float],
         rounded: Tuple[Decimal, Decimal],
 ):
-    for expected, actual in zip(rounded, value.rounded_data(multiplier)):
-        assert expected == actual
+    for actual, expected in zip(value.rounded_data(multiplier), rounded):
+        assert actual == expected
 
 
 test_formatted_data: List[Tuple[FormattedValue,
@@ -149,26 +152,73 @@ test_formatted_data: List[Tuple[FormattedValue,
                                 str]] = [
     (
         FormattedValue(10, 0.1),
-        r"\SI{{{0} \pm {1}}}{{{2}}}",
+        r"\SI{{{0} \pm {1}}}{{{3}}}",
         None,
         r"\centi\meter",
         r"\SI{10.0 \pm 0.1}{\centi\meter}"
     ),
     (
         FormattedValue(10, 0.1),
-        r"\SI{{{0} \pm {1}}}{{{2}}}",
+        r"\SI{{{0} \pm {1}}}{{{3}}}",
         1 / 100,
         r"\meter",
         r"\SI{0.100 \pm 0.001}{\meter}"
+    ),
+    (
+        FormattedValue(100, 10),
+        None,
+        None,
+        r"\meter",
+        r"\SI{10 \pm 1 e1}{\meter}"
+    ),
+    (
+        FormattedValue(1000, 100),
+        None,
+        None,
+        r"\meter",
+        r"\SI{10 \pm 1 e2}{\meter}"
+    ),
+    (
+        FormattedValue(10000, 1000),
+        None,
+        None,
+        r"\meter",
+        r"\SI{10 \pm 1 e3}{\meter}"
+    ),
+    (
+        FormattedValue(10000, 1000),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(10 ± 1) x 10^3"
+    ),
+    (
+        FormattedValue(10000, 1000, 2),
+        lambda value, error, exponent, units:
+        f"({value} ± {error}) x 10^{exponent} {units}",
+        None,
+        "m",
+        "(100 ± 10) x 10^2 m"
+    ),
+    (
+        FormattedValue(10000, 1000, 3),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(1000 ± 100) x 10^1"
     )
 ]
 
 
-@pytest.mark.parametrize("value, template, multiplier, units, expected",
-                         test_formatted_data)
+@pytest.mark.parametrize(
+    "value, template, multiplier, units, expected",
+    test_formatted_data
+)
 def test_formatted(
         value: FormattedValue,
-        template: Union[None, str],
+        template: Union[None, str, Callable[[str, str, str], str]],
         multiplier: Union[None, int, float],
         units: Union[None, str],
         expected: str,
@@ -176,5 +226,17 @@ def test_formatted(
     assert expected == value.formatted(template, multiplier, units)
 
 
-def test_str():
-    assert "10.0 ± 0.1" == str(FormattedValue(10, 0.1))
+test_str_data: List[Tuple[FormattedValue, str]] = [
+    (FormattedValue(10, 0.01), "10.00 ± 0.01"),
+    (FormattedValue(10, 0.1), "10.0 ± 0.1"),
+    (FormattedValue(100, 10), "(10 ± 1) x 10"),
+    (FormattedValue(1000, 100), "(10 ± 1) x 10^2")
+]
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    test_str_data
+)
+def test_str(value: FormattedValue, expected: str):
+    assert str(value) == expected
