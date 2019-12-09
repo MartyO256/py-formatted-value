@@ -19,16 +19,20 @@ class RoundingOption(Enum):
 
 
 class FormattedValue:
+    RoundingOption = RoundingOption
+
     def __init__(
             self,
             value: Union[int, float, Decimal],
             error: Union[int, float, Decimal] = 0,
             error_significant_figures: int = 1,
+            leading_zeroes_threshold: int = 3,
             rounding: RoundingOption = RoundingOption.ROUND_HALF_EVEN,
     ):
         self.value = value
         self.error = error
         self.error_significant_figures = error_significant_figures
+        self.leading_zeroes_threshold = leading_zeroes_threshold
         self.rounding = rounding
 
     @property
@@ -50,12 +54,34 @@ class FormattedValue:
     @error_significant_figures.setter
     def error_significant_figures(self, error_significant_figures: int) -> None:
         if type(error_significant_figures) is not int:
-            raise TypeError("The significant figures in the error should be "
-                            f"integral, not {error_significant_figures}.")
+            raise TypeError(
+                "The significant figures in the error should be an integer, "
+                f"not {error_significant_figures}."
+            )
         if error_significant_figures < 1:
-            raise ValueError("The significant figures in the error should be "
-                             f"positive, not {error_significant_figures}.")
+            raise ValueError(
+                "The significant figures in the error should be positive, "
+                f"not {error_significant_figures}."
+            )
         self.__error_significant_figures = error_significant_figures
+
+    @property
+    def leading_zeroes_threshold(self) -> int:
+        return self.__leading_zeroes_threshold
+
+    @leading_zeroes_threshold.setter
+    def leading_zeroes_threshold(self, leading_zeroes_threshold: int) -> None:
+        if type(leading_zeroes_threshold) is not int:
+            raise TypeError(
+                "The significant figures in the error should be an integer, "
+                f"not {leading_zeroes_threshold}."
+            )
+        if leading_zeroes_threshold < 0:
+            raise ValueError(
+                "The leading zeroes threshold should be non-negative, "
+                f"not {leading_zeroes_threshold}."
+            )
+        self.__leading_zeroes_threshold = leading_zeroes_threshold
 
     @property
     def rounding(self) -> RoundingOption:
@@ -95,20 +121,39 @@ class FormattedValue:
                                    Union[int, float, Decimal]]:
         return self.value, self.error
 
+    @staticmethod
+    def _leading_zeroes(value: Union[int, float, Decimal]):
+        scientific_notation = "%E" % value
+        exponent_token = scientific_notation[scientific_notation.index("E"):]
+        exponent = int(exponent_token[1:])
+        return 0 if exponent >= 0 else -exponent
+
     def rounded_data(
             self,
             multiplier: Union[None, int, float] = None,
     ) -> Tuple[Decimal, Decimal, int]:
         error = self._rounded_error(multiplier)
-        value = self._rounded_value(error, multiplier)
+        value = Decimal(self.value) if (
+                error == 0
+        ) else self._rounded_value(error, multiplier)
+        minimum_leading_zeroes = min(
+            FormattedValue._leading_zeroes(value),
+            FormattedValue._leading_zeroes(error)
+        ) if error != 0 else FormattedValue._leading_zeroes(value)
+        exponent = minimum_leading_zeroes if (
+                minimum_leading_zeroes > self.leading_zeroes_threshold
+        ) else 0
         error_significant_figures = self.error_significant_figures
-        exponent = floor(error.log10())
-        exponent = 0 if exponent < error_significant_figures \
-            else exponent - error_significant_figures + 1
-        return value.scaleb(-exponent), error.scaleb(-exponent), exponent
+        if error != 0:
+            correction = floor(error.log10())
+            correction = 0 if correction < error_significant_figures \
+                else correction - error_significant_figures + 1
+            exponent -= correction
+        return value.scaleb(exponent), error.scaleb(exponent), -exponent
 
-    SIUNITX_TEMPLATE = r"\SI{{{0} \pm {1} e{2}}}{{{3}}}"
-    SIUNITX_NUM_TEMPLATE = r"\num{{{0} \pm {1} e{2}}}"
+    SIUNITX_INNER_TEMPLATE = r"{0} \pm {1} e{2}"
+    SIUNITX_TEMPLATE = r"\SI{{" + SIUNITX_INNER_TEMPLATE + r"}}{{{3}}}"
+    SIUNITX_NUM_TEMPLATE = r"\num{{" + SIUNITX_INNER_TEMPLATE + r"}}"
 
     def formatted(
             self,
@@ -129,14 +174,17 @@ class FormattedValue:
     @staticmethod
     def _natural_format(value: str, error: str, exponent: str, units: str):
         if exponent == "0":
-            return f"({value} ± {error}) {units}" if units \
-                else f"{value} ± {error}"
+            return f"({value} ± {error}) {units}" if (
+                units
+            ) else f"{value} ± {error}"
         elif exponent == "1":
-            return f"({value} ± {error}) x 10 {units}" if units \
-                else f"({value} ± {error}) x 10"
+            return f"({value} ± {error}) x 10 {units}" if (
+                units
+            ) else f"({value} ± {error}) x 10"
         else:
-            return f"({value} ± {error}) x 10^{exponent} {units}" if units \
-                else f"({value} ± {error}) x 10^{exponent}"
+            return f"({value} ± {error}) x 10^{exponent} {units}" if (
+                units
+            ) else f"({value} ± {error}) x 10^{exponent}"
 
     NATURAL_TEMPLATE = _natural_format
 

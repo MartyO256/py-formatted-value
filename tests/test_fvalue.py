@@ -31,6 +31,33 @@ def test_error_setter(
         FormattedValue(valid_value, error)
 
 
+test_leading_zeroes_threshold_setter_data: List[
+    Tuple[Union[int, str], Union[None, ValueError]]] = [
+    (0, None),
+    (1, None),
+    (2, None),
+    (3, None),
+    (-1, ValueError),
+    (-2, ValueError),
+    (-3, ValueError),
+    ("Huh", TypeError),
+]
+
+
+@pytest.mark.parametrize("threshold, exception",
+                         test_leading_zeroes_threshold_setter_data)
+def test_leading_zeroes_threshold_setter(
+        threshold: Union[int, str],
+        exception: Union[None, ValueError, TypeError]
+) -> None:
+    valid_value = 10
+    if exception:
+        with pytest.raises(exception):
+            FormattedValue(valid_value, leading_zeroes_threshold=threshold)
+    else:
+        FormattedValue(valid_value, leading_zeroes_threshold=threshold)
+
+
 test_error_significant_figures_setter_data: \
     List[Tuple[Union[None, int, float, Decimal],
                Union[None, TypeError, ValueError]]] = [
@@ -121,7 +148,7 @@ def test_actual_data(
             FormattedValue(value, error).actual_data(),
             (value, error)
     ):
-        assert actual == expected
+        assert expected == actual
 
 
 test_rounded_data_data: List[Tuple[FormattedValue,
@@ -142,7 +169,7 @@ def test_rounded_data(
         rounded: Tuple[Decimal, Decimal],
 ):
     for actual, expected in zip(value.rounded_data(multiplier), rounded):
-        assert actual == expected
+        assert expected == actual
 
 
 test_formatted_data: List[Tuple[FormattedValue,
@@ -208,7 +235,131 @@ test_formatted_data: List[Tuple[FormattedValue,
         None,
         None,
         "(1000 ± 100) x 10^1"
-    )
+    ),
+    (
+        FormattedValue(Decimal("1.602176634").scaleb(-19)),
+        lambda value, _1, exponent, _2:
+        f"{value} x 10^{exponent}",
+        None,
+        None,
+        "1.602176634 x 10^-19"
+    ),
+    (
+        FormattedValue(
+            Decimal("10973731.568160"),
+            Decimal("0.000021"),
+            error_significant_figures=2
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(10973731.568160 ± 0.000021) x 10^0"
+    ),
+    (
+        FormattedValue(
+            Decimal("9.2740100783").scaleb(-24),
+            Decimal("0.0000000028").scaleb(-24),
+            error_significant_figures=2
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(9.2740100783 ± 0.0000000028) x 10^-24"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.92740100783").scaleb(-23),
+            Decimal("0.00000000028").scaleb(-23),
+            error_significant_figures=2
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(9.2740100783 ± 0.0000000028) x 10^-24"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.092740100783").scaleb(-22),
+            Decimal("0.000000000028").scaleb(-22),
+            error_significant_figures=2
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(9.2740100783 ± 0.0000000028) x 10^-24"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.10"),
+            Decimal("0.01"),
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(0.10 ± 0.01) x 10^0"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.010"),
+            Decimal("0.001"),
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(0.010 ± 0.001) x 10^0"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.0010"),
+            Decimal("0.0001"),
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(0.0010 ± 0.0001) x 10^0"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.00010"),
+            Decimal("0.00001"),
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(1.0 ± 0.1) x 10^-4"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.00010"),
+            Decimal("0.00001"),
+            leading_zeroes_threshold=4,
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(0.00010 ± 0.00001) x 10^0"
+    ),
+    (
+        FormattedValue(
+            Decimal("0.00010"),
+            Decimal("0.00001"),
+            leading_zeroes_threshold=2,
+        ),
+        lambda value, error, exponent, _:
+        f"({value} ± {error}) x 10^{exponent}",
+        None,
+        None,
+        "(1.0 ± 0.1) x 10^-4"
+    ),
 ]
 
 
@@ -223,7 +374,7 @@ def test_formatted(
         units: Union[None, str],
         expected: str,
 ):
-    assert expected == value.formatted(template, multiplier, units)
+    assert value.formatted(template, multiplier, units) == expected
 
 
 test_str_data: List[Tuple[FormattedValue, str]] = [
@@ -239,4 +390,4 @@ test_str_data: List[Tuple[FormattedValue, str]] = [
     test_str_data
 )
 def test_str(value: FormattedValue, expected: str):
-    assert str(value) == expected
+    assert expected == str(value)
