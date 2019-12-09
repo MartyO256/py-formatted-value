@@ -1,8 +1,9 @@
+from typing import Tuple, Union, Callable
+
 from decimal import Decimal, ROUND_HALF_EVEN, ROUND_05UP, ROUND_CEILING, \
     ROUND_DOWN, ROUND_FLOOR, ROUND_HALF_DOWN, ROUND_HALF_UP, ROUND_UP
 from enum import Enum, unique
 from math import floor
-from typing import Tuple, Union, Callable
 
 
 @unique

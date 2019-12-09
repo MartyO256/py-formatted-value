@@ -1,5 +1,5 @@
 .idea
-htmlcov
 .coverage
-coverage.xml
 .pytest_cache
+htmlcov
+coverage.xml
