@@ -5,12 +5,12 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="fvalue",
-    version="0.0.0",
+    version="1.0.0",
     author="Marc-Antoine Ouimet",
     author_email="ouimetmarcantoine@gmail.com",
     description=(
         "Values and their uncertainties formatter up to a given "
-        "amount of significant figures in the uncertainty."
+        "number of significant figures in the uncertainty."
     ),
     long_description=long_description,
     long_descript_content_type="text/markdown",

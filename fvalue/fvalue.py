@@ -233,11 +233,11 @@ class FormattedValue:
             exponent -= correction
         return value.scaleb(exponent), error.scaleb(exponent), -exponent
 
-    SIUNITX_INNER_TEMPLATE = r"{0} \pm {1} e{2}"
-    SIUNITX_TEMPLATE = r"\SI{{" + SIUNITX_INNER_TEMPLATE + r"}}{{{3}}}"
+    _SIUNITX_INNER_TEMPLATE = r"{0} \pm {1} e{2}"
+    SIUNITX_TEMPLATE = r"\SI{{" + _SIUNITX_INNER_TEMPLATE + r"}}{{{3}}}"
     SIUNITX_VALUE_TEMPLATE = r"\SI{{{0} e{2}}}{{{3}}}"
     SIUNITX_ERROR_TEMPLATE = r"\SI{{{1} e{2}}}{{{3}}}"
-    SIUNITX_NUM_TEMPLATE = r"\num{{" + SIUNITX_INNER_TEMPLATE + r"}}"
+    SIUNITX_NUM_TEMPLATE = r"\num{{" + _SIUNITX_INNER_TEMPLATE + r"}}"
     SIUNITX_NUM_VALUE_TEMPLATE = r"\num{{{0} e{2}}}"
     SIUNITX_NUM_ERROR_TEMPLATE = r"\num{{{1} e{2}}}"
 
