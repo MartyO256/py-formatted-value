@@ -245,6 +245,14 @@ test_formatted_data: List[Tuple[FormattedValue,
         "1.602176634 x 10^-19"
     ),
     (
+        FormattedValue(Decimal("0.001")),
+        lambda value, _1, exponent, _2:
+        f"{value} x 10^{exponent}",
+        None,
+        None,
+        "0.001 x 10^0"
+    ),
+    (
         FormattedValue(
             Decimal("10973731.568160"),
             Decimal("0.000021"),
@@ -359,6 +367,27 @@ test_formatted_data: List[Tuple[FormattedValue,
         None,
         None,
         "(1.0 ± 0.1) x 10^-4"
+    ),
+    (
+        FormattedValue(Decimal("1")),
+        "{0} x 10^{2}",
+        None,
+        None,
+        "1 x 10^0"
+    ),
+    (
+        FormattedValue(Decimal("0.1")),
+        "{0} x 10^{2}",
+        None,
+        None,
+        "0.1 x 10^0"
+    ),
+    (
+        FormattedValue(Decimal("0.0001")),
+        "{0} x 10^{2}",
+        None,
+        None,
+        "1 x 10^-4"
     ),
 ]
 
