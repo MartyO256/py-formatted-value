@@ -13,7 +13,7 @@ setuptools.setup(
         "number of significant figures in the uncertainty."
     ),
     long_description=long_description,
-    long_descript_content_type="text/markdown",
+    long_description_content_type="text/markdown",
     url="https://github.com/MartyO256/py-formatted-value",
     packages=setuptools.find_packages(),
     keywords="significant figures values uncertainty formatting format",
